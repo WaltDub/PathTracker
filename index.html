@@ -34,7 +34,7 @@
       font-size: 14px;
     }
 
-    #panel button, #panel input[type="text"] {
+    #panel button {
       margin-top: 8px;
       margin-right: 10px;
       padding: 6px 12px;
@@ -52,7 +52,6 @@
     <div id="info"><b>PathTracker</b><br>Press Start to begin tracking</div>
     <button id="startBtn">Start</button>
     <button id="stopBtn" disabled>Stop</button>
-    <input type="text" id="filenameInput" placeholder="Enter filename" style="width: 160px;" />
     <button id="downloadBtn" disabled>Save Path</button>
     <input type="file" id="openFile" accept=".geojson" style="display:none" />
     <button id="openBtn">Load Path</button>
@@ -78,7 +77,6 @@
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
     const downloadBtn = document.getElementById('downloadBtn');
-    const filenameInput = document.getElementById('filenameInput');
     const openBtn = document.getElementById('openBtn');
     const openFile = document.getElementById('openFile');
 
@@ -201,8 +199,9 @@
         }]
       };
 
-      let filename = filenameInput.value.trim();
-      if (!filename) filename = "pathtracker";
+      let filename = prompt("Enter filename for your path:", "pathtracker");
+      if (!filename) return;
+      filename = filename.trim();
       if (!filename.endsWith(".geojson")) filename += ".geojson";
 
       const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" });
@@ -239,4 +238,14 @@
       openFile.click();
     });
 
-    openFile.addEventListener('change
+    openFile.addEventListener('change', event => {
+      const file = event.target.files[0];
+      if (file) loadGeoJSON(file);
+    });
+
+    startBtn.addEventListener('click', startTracking);
+    stopBtn.addEventListener('click', stopTracking);
+    downloadBtn.addEventListener('click', downloadGeoJSON);
+  </script>
+</body>
+</html>
