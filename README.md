@@ -2,6 +2,10 @@
 
 **PathTracker** is a lightweight, browser-based GPS walk logger designed for mobile devices. It tracks your path in real time, smooths noisy GPS data, and lets you export your walk as a GeoJSON file. Built for clarity, usability, and open-source collaboration.
 
+## Support This Project
+If you find PathTracker useful, consider supporting its development:
+
+[![Donate via Stripe](https://img.shields.io/badge/Donate-Stripe-blue)](https://donate.stripe.com/7sYbJ2de5eHX4gO5BZbbG00)
 ## Features
 
 - Real-time GPS tracking with smoothed position data
