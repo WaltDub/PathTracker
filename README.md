@@ -6,15 +6,43 @@
 If you find PathTracker useful, consider supporting its development:
 
 [![Donate via Stripe](https://img.shields.io/badge/Donate-Stripe-blue)](https://donate.stripe.com/7sYbJ2de5eHX4gO5BZbbG00)
+
 ## Features
 
-- Real-time GPS tracking with smoothed position data
-- Altitude, speed, bearing, and distance metrics
-- Wake Lock support to prevent screen sleep during tracking
-- Mobile-friendly Leaflet map interface
-- Save path as `.geojson` with custom filename
-- Load previously saved paths for review
-- iOS/Android detection with platform-specific warnings
+Each feature in **PathTracker** is designed for clarity, usability, and real-world GPS logging on mobile devices:
+
+**Real-time GPS tracking with smoothed telemetry**  
+Uses `navigator.geolocation.watchPosition()` combined with [GpsSmoother](https://github.com/WaltDub/GpsSmoother) to capture and refine location data.  
+Ensures accurate, jitter-free traces even in urban or forested environments.
+
+**Altitude, speed, and bearing display**  
+Calculates smoothed metrics using haversine distance and vector math.  
+Provides meaningful feedback for hikers, runners, and directional navigation.
+
+
+**Wake Lock support to prevent screen sleep**  
+Leverages the Wake Lock API to keep the screen awake during tracking.  
+Prevents data gaps caused by browser suspension when the device sleeps — critical for uninterrupted logging.
+
+**Platform detection with user guidance**  
+Detects iOS vs Android and displays warnings when Wake Lock is unsupported.  
+Improves reliability by informing users of platform-specific limitations and workarounds.
+
+**Mobile-friendly Leaflet map interface**  
+Displays live position and path using Leaflet.js with OpenStreetMap tiles.  
+Offers intuitive, responsive visualization optimized for small screens and touch input.
+
+**GeoJSON export with custom filename**  
+Generates a standards-compliant `.geojson` file containing coordinates and metadata.  
+Supports direct import into GIS tools, mapping platforms, and spatial databases.
+
+**File import for reviewing saved paths**  
+Allows users to load previously saved GeoJSON files and visualize them on the map.  
+Enables comparison, review, and reuse of past walks without external tools.
+
+**Stateless, single-file architecture**  
+Implements all logic in a standalone HTML file with no build tools or dependencies.  
+Easy to host, fork, and customize — ideal for open-source distribution and educational use.
 
 ## Demo
 
