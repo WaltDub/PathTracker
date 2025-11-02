@@ -34,7 +34,7 @@
       font-size: 14px;
     }
 
-    #panel button {
+    #panel button, #panel input[type="text"] {
       margin-top: 8px;
       margin-right: 10px;
       padding: 6px 12px;
@@ -52,15 +52,16 @@
     <div id="info"><b>PathTracker</b><br>Press Start to begin tracking</div>
     <button id="startBtn">Start</button>
     <button id="stopBtn" disabled>Stop</button>
-    <button id="downloadBtn" disabled>Download GeoJSON</button>
+    <input type="text" id="filenameInput" placeholder="Enter filename" style="width: 160px;" />
+    <button id="downloadBtn" disabled>Save Path</button>
+    <input type="file" id="openFile" accept=".geojson" style="display:none" />
+    <button id="openBtn">Load Path</button>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module">
-    // Import the GpsSmoother module from CDN
     import GpsSmoother from 'https://cdn.jsdelivr.net/gh/WaltDub/GpsSmoother/GpsSmoother.js';
 
-    // Initialize smoother and map
     const smoother = new GpsSmoother();
     const map = L.map('map').setView([57.0, 10.0], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -71,14 +72,43 @@
     let totalDistance = 0;
     let minAltitude = null;
     let maxAltitude = null;
+    let wakeLock = null;
 
     const info = document.getElementById('info');
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
     const downloadBtn = document.getElementById('downloadBtn');
+    const filenameInput = document.getElementById('filenameInput');
+    const openBtn = document.getElementById('openBtn');
+    const openFile = document.getElementById('openFile');
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => {
+            console.log('Wake Lock was released');
+          });
+          console.log('Wake Lock is active');
+        } catch (err) {
+          console.warn('Wake Lock failed:', err.name, err.message);
+        }
+      } else {
+        showWakeLockWarning();
+      }
+    }
+
+    function showWakeLockWarning() {
+      const tip = isIOS
+        ? 'Warning: On iOS, screen sleep may interrupt tracking. Consider disabling Auto-Lock in Settings.'
+        : 'Warning: Wake Lock not supported. Tracking may pause if screen sleeps.';
+      info.innerHTML += `<br><span style="color:red">${tip}</span>`;
+    }
 
     function startTracking() {
-      // Reset smoother and session data
       smoother.reset();
       totalDistance = 0;
       minAltitude = null;
@@ -87,31 +117,22 @@
       if (marker) marker.remove();
       marker = null;
 
-      // Start watching GPS position
       watchId = navigator.geolocation.watchPosition(pos => {
         const { latitude: lat, longitude: lon, altitude } = pos.coords;
         const last = smoother.positions.at(-1);
-
-        // Add raw position to smoother
         smoother.addPosition(lat, lon, altitude);
 
-        // Calculate distance using Haversine between last and current
         if (last) {
           const d = smoother._haversine({ lat, lon }, last);
           totalDistance += d;
         }
 
-        // Track min/max altitude
         if (altitude !== null && !isNaN(altitude)) {
           if (minAltitude === null || altitude < minAltitude) minAltitude = altitude;
           if (maxAltitude === null || altitude > maxAltitude) maxAltitude = altitude;
         }
 
-        // Get smoothed data — this is where GpsSmoother makes a difference:
-        // It filters out jitter, noise, and erratic jumps in bearing, altitude, and speed.
         const data = smoother.getSmoothedData();
-
-        // Display smoothed values and session stats
         info.innerHTML = `
           <b>PathTracker</b><br>
           Lat: ${lat.toFixed(5)}<br>
@@ -119,12 +140,11 @@
           Bearing: ${data.bearing?.toFixed(1)}°<br>
           Altitude: ${data.altitude?.toFixed(1)} m<br>
           Speed: ${data.speed?.toFixed(2)} m/s<br>
-          <b>Distance walked:</b> ${(totalDistance / 1000).toFixed(2)} km<br>
-          <b>Min altitude:</b> ${minAltitude?.toFixed(1) ?? '–'} m<br>
-          <b>Max altitude:</b> ${maxAltitude?.toFixed(1) ?? '–'} m
+          Distance walked: ${(totalDistance / 1000).toFixed(2)} km<br>
+          Min altitude: ${minAltitude?.toFixed(1) ?? '–'} m<br>
+          Max altitude: ${maxAltitude?.toFixed(1) ?? '–'} m
         `;
 
-        // Update map visuals
         polyline.addLatLng([lat, lon]);
         if (!marker) {
           marker = L.marker([lat, lon]).addTo(map);
@@ -143,13 +163,18 @@
       startBtn.disabled = true;
       stopBtn.disabled = false;
       downloadBtn.disabled = true;
+
+      requestWakeLock();
     }
 
     function stopTracking() {
-      // Stop GPS updates
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
+      }
+      if (wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
       }
       info.innerHTML += `<br><b>Tracking stopped.</b>`;
       startBtn.disabled = false;
@@ -158,7 +183,6 @@
     }
 
     function downloadGeoJSON() {
-      // Export walked path as GeoJSON LineString
       const coords = smoother.positions.map(p => [p.lon, p.lat]);
       const geojson = {
         type: "FeatureCollection",
@@ -177,20 +201,42 @@
         }]
       };
 
-      // Trigger download
+      let filename = filenameInput.value.trim();
+      if (!filename) filename = "pathtracker";
+      if (!filename.endsWith(".geojson")) filename += ".geojson";
+
       const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "pathtracker.geojson";
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    // Button bindings
-    startBtn.addEventListener('click', startTracking);
-    stopBtn.addEventListener('click', stopTracking);
-    downloadBtn.addEventListener('click', downloadGeoJSON);
-  </script>
-</body>
-</html>
+    function loadGeoJSON(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const geojson = JSON.parse(e.target.result);
+          const feature = geojson.features?.[0];
+          if (feature?.geometry?.type === 'LineString') {
+            const coords = feature.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+            L.polyline(coords, { color: 'green' }).addTo(map);
+            map.fitBounds(coords);
+            info.innerHTML = `<b>PathTracker</b><br>Loaded saved trace with ${coords.length} points.`;
+          } else {
+            info.innerHTML = 'Invalid GeoJSON format.';
+          }
+        } catch (err) {
+          info.innerHTML = 'Error loading file: ' + err.message;
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    openBtn.addEventListener('click', () => {
+      openFile.click();
+    });
+
+    openFile.addEventListener('change
