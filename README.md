@@ -80,6 +80,36 @@ Saved paths use the [GeoJSON](https://geojson.org/) format:
   }]
 }
 ```
-## Development
+## Use Cases
 
-PathTracker is a single-page web app built with HTML, JavaScript, and Leaflet. It uses [GpsSmoother](https://github.com/WaltDub/GpsSmoother) for real-time position smoothing and is designed for mobile-first usability.
+PathTracker is designed for real-world GPS logging across a variety of scenarios:
+
+- **Hiking and trail exploration**  
+  Track your route, elevation changes, and distance walked in remote areas.
+
+- **Urban walking and sightseeing**  
+  Log city walks, tourist routes, or neighborhood strolls with accurate path data.
+
+- **Fitness and training**  
+  Monitor speed, altitude, and distance during runs or workouts.
+
+- **Vehicle movement tracking**  
+  Record driving paths for delivery routes, fieldwork, or compliance checks.
+
+- **GeoJSON-based mapping projects**  
+  Export standardized path data for use in Leaflet, Mapbox, or GIS platforms.
+
+- **Mobile-friendly field logging**  
+  Use directly in the browser without installing apps — ideal for quick deployment.
+
+- **Testing GPS smoothing algorithms**  
+  Compare raw vs. smoothed telemetry for research, debugging, or algorithm tuning.
+
+- **Direction and bearing analysis**  
+  Visualize heading changes and movement stability over time.
+
+---
+
+## License
+
+This project is licensed under the **MIT License**
